@@ -1,0 +1,313 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContactStatus {
+  SUBSCRIBED
+  UNSUBSCRIBED
+  BOUNCED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SENDING
+  SENT
+  FAILED
+}
+
+enum MessageEventStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum WebhookMailEventType {
+  DELIVERED
+  BOUNCED
+  COMPLAINED
+  DEFERRED
+}
+
+enum WebhookBounceKind {
+  HARD
+  SOFT
+  UNKNOWN
+}
+
+enum SequenceStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SequenceEnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
+enum PlanKey {
+  FREE
+  PRO
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String
+  password    String
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  emailVerifiedAt           DateTime?
+  verificationTokenHash     String?
+  verificationTokenExpiresAt DateTime?
+  resetTokenHash            String?
+  resetTokenExpiresAt       DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Workspace {
+  id                 String               @id @default(cuid())
+  name               String
+  stripeCustomerId     String?              @unique
+  stripeSubscriptionId String?              @unique
+  subscriptionStatus   SubscriptionStatus   @default(NONE)
+  planKey              PlanKey              @default(FREE)
+  currentPeriodEnd     DateTime?
+  users              User[]
+  contacts           Contact[]
+  emailTemplates     EmailTemplate[]
+  campaigns          Campaign[]
+  sequences          Sequence[]
+  sequenceEnrollments SequenceEnrollment[]
+  messageEvents      MessageEvent[]
+  unsubscribeEvents  UnsubscribeEvent[]
+  webhookEvents      WebhookEvent[]
+  emailUsages        WorkspaceEmailUsage[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model Contact {
+  id                String             @id @default(cuid())
+  workspaceId       String
+  workspace         Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  email             String
+  firstName         String?
+  lastName          String?
+  company           String?
+  phone             String?
+  status            ContactStatus      @default(SUBSCRIBED)
+  tags              String[]           @default([])
+  messageEvents        MessageEvent[]
+  unsubscribeEvents    UnsubscribeEvent[]
+  webhookEvents        WebhookEvent[]
+  sequenceEnrollments  SequenceEnrollment[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@unique([workspaceId, email])
+  @@index([workspaceId])
+}
+
+model UnsubscribeEvent {
+  id          String    @id @default(cuid())
+  workspaceId String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contactId   String
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  source      String    @default("email_link")
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
+  @@index([contactId])
+}
+
+model EmailTemplate {
+  id          String     @id @default(cuid())
+  workspaceId String
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name        String
+  subject     String
+  html        String     @db.Text
+  text          String?        @db.Text
+  campaigns     Campaign[]
+  sequenceSteps SequenceStep[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([workspaceId])
+}
+
+model Campaign {
+  id             String           @id @default(cuid())
+  workspaceId    String
+  workspace      Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name           String
+  templateId     String
+  template       EmailTemplate    @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  status         CampaignStatus   @default(DRAFT)
+  query          String?
+  tag            String?
+  sendJobId      String?
+  /** UTC: when to enqueue the real send job (BullMQ delayed job). */
+  scheduledAt    DateTime?
+  /** BullMQ job id for delayed `scheduled-start` (e.g. campaign-schedule-{id}). */
+  scheduleJobId  String?
+  messageEvents  MessageEvent[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  sentAt         DateTime?
+
+  @@index([workspaceId])
+  @@index([templateId])
+  @@index([workspaceId, status])
+  @@index([workspaceId, scheduledAt])
+}
+
+model Sequence {
+  id           String                 @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  name         String
+  status       SequenceStatus         @default(DRAFT)
+  steps        SequenceStep[]
+  enrollments  SequenceEnrollment[]
+  messageEvents MessageEvent[]
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@index([workspaceId])
+  @@index([workspaceId, status])
+}
+
+model SequenceStep {
+  id           String         @id @default(cuid())
+  sequenceId   String
+  sequence     Sequence       @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  order        Int
+  templateId   String
+  template     EmailTemplate  @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  delayMinutes Int            @default(0)
+
+  @@unique([sequenceId, order])
+  @@index([sequenceId])
+}
+
+model SequenceEnrollment {
+  id               String                   @id @default(cuid())
+  sequenceId       String
+  sequence         Sequence                 @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  contactId        String
+  contact          Contact                  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  workspaceId      String
+  workspace        Workspace                @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  status           SequenceEnrollmentStatus @default(ACTIVE)
+  /** Step order to send when the worker runs (matches SequenceStep.order). */
+  currentStepOrder Int
+  nextRunAt        DateTime?
+  /** BullMQ job id for the next pending step or advance job (best-effort cancel). */
+  pendingJobId     String?
+  messageEvents    MessageEvent[]
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+
+  @@unique([sequenceId, contactId])
+  @@index([workspaceId])
+  @@index([sequenceId])
+}
+
+model MessageEvent {
+  id                     String              @id @default(cuid())
+  workspaceId            String
+  workspace              Workspace           @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  campaignId             String?
+  campaign               Campaign?           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId              String?
+  contact                Contact?            @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  email                  String
+  status                 MessageEventStatus
+  error                  String?
+  /** RFC 5322 Message-ID from SMTP (normalized: no angle brackets, lowercased) */
+  smtpMessageId          String?
+  /** Provider / queue id for webhook correlation (e.g. SendGrid sg_message_id) */
+  providerMessageId      String?
+  sequenceId             String?
+  sequence               Sequence?           @relation(fields: [sequenceId], references: [id], onDelete: SetNull)
+  sequenceEnrollmentId   String?
+  sequenceEnrollment     SequenceEnrollment? @relation(fields: [sequenceEnrollmentId], references: [id], onDelete: SetNull)
+  sequenceStepOrder      Int?
+  createdAt              DateTime            @default(now())
+  webhookEvents          WebhookEvent[]
+
+  @@index([workspaceId])
+  @@index([campaignId])
+  @@index([workspaceId, campaignId])
+  @@index([smtpMessageId])
+  @@index([providerMessageId])
+  @@index([sequenceId])
+  @@index([sequenceEnrollmentId])
+}
+
+model WorkspaceEmailUsage {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  /** UTC month bucket, format YYYY-MM */
+  periodKey    String
+  emailsSent   Int       @default(0)
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([workspaceId, periodKey])
+  @@index([workspaceId])
+}
+
+model StripeWebhookEvent {
+  id            String    @id @default(cuid())
+  stripeEventId String    @unique
+  type          String
+  payload       Json
+  processedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([processedAt])
+}
+
+model WebhookEvent {
+  id                String               @id @default(cuid())
+  provider          String
+  /** Unique per provider: explicit id or sha256(payload) */
+  idempotencyKey    String               @unique
+  providerEventId   String?
+  type              WebhookMailEventType
+  bounceKind        WebhookBounceKind?
+  email             String
+  workspaceId       String?
+  workspace         Workspace?           @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  contactId         String?
+  contact           Contact?             @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  messageEventId    String?
+  messageEvent      MessageEvent?        @relation(fields: [messageEventId], references: [id], onDelete: SetNull)
+  rawPayload        Json
+  receivedAt        DateTime             @default(now())
+  createdAt         DateTime             @default(now())
+
+  @@index([email])
+  @@index([workspaceId])
+  @@index([messageEventId])
+  @@index([provider])
+}

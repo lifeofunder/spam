@@ -1,0 +1,35 @@
+{
+  "name": "email-saas-mvp",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "npm run dev:infra && npm run dev:apps",
+    "dev:all": "npm run dev:infra && npm run dev:prepare && npm run dev:apps",
+    "dev:infra": "docker compose up -d",
+    "dev:apps": "concurrently \"npm run dev --workspace @email-saas/api\" \"npm run dev --workspace @email-saas/web\"",
+    "dev:worker": "npm run worker:dev --workspace @email-saas/api",
+    "dev:apps:with-worker": "concurrently \"npm run dev --workspace @email-saas/api\" \"npm run dev --workspace @email-saas/web\" \"npm run worker:dev --workspace @email-saas/api\"",
+    "dev:prepare": "npm run setup && npm run prisma:generate --workspace @email-saas/api && npm run prisma:migrate --workspace @email-saas/api && npm run seed",
+    "build": "npm run build --workspace @email-saas/shared && npm run build --workspace @email-saas/api && npm run build --workspace @email-saas/web",
+    "test:api": "npm run test --workspace @email-saas/api",
+    "lint": "npm run lint --workspaces",
+    "format": "prettier . --write",
+    "seed": "npm run prisma:seed --workspace @email-saas/api"
+  },
+  "overrides": {
+    "ioredis": "5.4.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.22.0",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.22.0",
+    "globals": "^15.15.0",
+    "typescript-eslint": "^8.26.1",
+    "prettier": "^3.5.3"
+  }
+}

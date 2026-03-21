@@ -40,12 +40,10 @@ jobs:
         run: npm run build --workspace @email-saas/web
         env:
           NEXT_STATIC_EXPORT: '1'
-          # Optional repo Variables (Settings → Secrets and variables → Actions → Variables):
-          # NEXT_PUBLIC_BASE_PATH=/my-repo   (project site; leading slash, no trailing slash)
-          # NEXT_PUBLIC_WEB_URL=https://<owner>.github.io/my-repo
-          # NEXT_PUBLIC_API_URL=https://your-api.example.com
+          # GITHUB_REPOSITORY is set by Actions (owner/repo); next.config infers basePath if var empty.
+          # Override via repo Variables when needed (custom domain at root, renamed site, etc.).
           NEXT_PUBLIC_BASE_PATH: ${{ vars.NEXT_PUBLIC_BASE_PATH }}
-          NEXT_PUBLIC_WEB_URL: ${{ vars.NEXT_PUBLIC_WEB_URL }}
+          NEXT_PUBLIC_WEB_URL: ${{ vars.NEXT_PUBLIC_WEB_URL != '' && vars.NEXT_PUBLIC_WEB_URL || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL }}
 
       - name: Upload Pages artifact

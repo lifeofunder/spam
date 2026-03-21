@@ -24,13 +24,15 @@ Monorepo for an email SaaS starter with:
 
 **GitHub settings:** **Settings → Pages → Build and deployment → Source: GitHub Actions** (not “Deploy from a branch”).
 
-**Optional Actions variables** ( **Settings → Secrets and variables → Actions → Variables** ), used at build time:
+**Actions variables** ( **Settings → Secrets and variables → Actions → Variables** ), used at build time:
 
 | Variable | When needed |
 | -------- | ----------- |
-| `NEXT_PUBLIC_BASE_PATH` | Project Pages only: e.g. `/my-repo` (leading `/`, no trailing slash). Sets Next `basePath` + `assetPrefix`. |
-| `NEXT_PUBLIC_WEB_URL` | Public origin of the web app, e.g. `https://<owner>.github.io/my-repo` — must match how users open the site (and the path must align with `NEXT_PUBLIC_BASE_PATH`). Used for OpenGraph / `metadataBase`. |
+| `NEXT_PUBLIC_BASE_PATH` | **Optional for standard project Pages.** If unset, `apps/web/next.config.ts` infers `/<repo>` from `GITHUB_REPOSITORY` on GitHub Actions so `/_next` assets load under `https://<owner>.github.io/<repo>/`. Set explicitly for custom base paths or to override inference. |
+| `NEXT_PUBLIC_WEB_URL` | **Defaults in workflow** to `https://<owner>.github.io/<repo>` when unset. Used for OpenGraph / `metadataBase`. Override for a custom domain. |
 | `NEXT_PUBLIC_API_URL` | URL of your **deployed** API (see below). If unset, the bundle may still reference `localhost` and **login/dashboard will not work** from the internet. |
+
+**If the deployed site looks unstyled or “unchanged” after a redesign:** open DevTools → **Network**, reload — if `/_next/static/...` (without your repo segment) returns **404**, the build was missing `basePath`. Fix: push a build with inference (this repo) or set `NEXT_PUBLIC_BASE_PATH=/your-repo`. Hard-refresh or **Incognito** rules out stale cache.
 
 ### Static export mode (trade-offs)
 

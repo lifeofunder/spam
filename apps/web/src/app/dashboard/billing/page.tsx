@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -94,76 +97,114 @@ export default function BillingPage() {
   };
 
   if (!token) {
-    return <main className="container">Checking auth...</main>;
+    return (
+      <main>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Checking session…
+        </p>
+      </main>
+    );
   }
 
   return (
-    <main className="container">
-      <p>
-        <Link href="/dashboard">← Dashboard</Link>
-      </p>
-      <h1>Billing</h1>
+    <main>
+      <PageHeader
+        title="Billing"
+        description="Plan limits, usage this period, and Stripe checkout or portal."
+      />
 
       {checkoutFlash === 'success' && (
-        <p style={{ color: 'green' }}>Checkout completed — refreshing subscription may take a few seconds.</p>
+        <p className="billing-flash-success" role="status">
+          Checkout completed — refreshing subscription may take a few seconds.
+        </p>
       )}
-      {checkoutFlash === 'cancel' && <p>Checkout canceled.</p>}
+      {checkoutFlash === 'cancel' && (
+        <p className="muted" role="status">
+          Checkout canceled.
+        </p>
+      )}
 
-      {loading && <p>Loading…</p>}
-      {!loading && !data && <p>Unable to load billing.</p>}
+      {loading && (
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Loading billing…
+        </p>
+      )}
+      {!loading && !data && (
+        <p className="error" role="alert">
+          Unable to load billing.
+        </p>
+      )}
       {data && (
-        <>
-          <section style={{ marginBottom: 24 }}>
-            <h2>Plan</h2>
-            <p>
-              <strong>Stored plan:</strong> {data.planKey} · <strong>Effective limits:</strong>{' '}
-              {data.limitsPlanKey}
-            </p>
-            <p>
-              <strong>Subscription status:</strong> {data.subscriptionStatus}
-            </p>
-            <p>
-              <strong>Current period ends:</strong>{' '}
-              {data.currentPeriodEnd
-                ? new Date(data.currentPeriodEnd).toLocaleString(undefined, { timeZone: 'UTC' }) + ' UTC'
-                : '—'}
-            </p>
-          </section>
-
-          <section style={{ marginBottom: 24 }}>
-            <h2>Usage ({data.usage.usagePeriodKey} UTC)</h2>
-            <ul>
-              <li>Contacts: {data.usage.contactsCount} / {data.limits.maxContacts}</li>
-              <li>Emails sent this month: {data.usage.emailsSentThisMonth} / {data.limits.maxEmailsPerMonth}</li>
-              <li>Active sequences: {data.usage.activeSequencesCount} / {data.limits.maxActiveSequences}</li>
+        <div className="billing-grid">
+          <Card className="surface-card--wide">
+            <h2 className="card-title">Plan</h2>
+            <ul className="billing-facts muted">
+              <li>
+                <strong className="billing-facts-label">Stored plan:</strong> {data.planKey}
+              </li>
+              <li>
+                <strong className="billing-facts-label">Effective limits:</strong> {data.limitsPlanKey}
+              </li>
+              <li>
+                <strong className="billing-facts-label">Subscription:</strong> {data.subscriptionStatus}
+              </li>
+              <li>
+                <strong className="billing-facts-label">Current period ends:</strong>{' '}
+                {data.currentPeriodEnd
+                  ? new Date(data.currentPeriodEnd).toLocaleString(undefined, { timeZone: 'UTC' }) + ' UTC'
+                  : '—'}
+              </li>
             </ul>
-          </section>
+          </Card>
+
+          <Card className="surface-card--wide">
+            <h2 className="card-title">Usage ({data.usage.usagePeriodKey} UTC)</h2>
+            <ul className="billing-facts muted">
+              <li>
+                Contacts: {data.usage.contactsCount} / {data.limits.maxContacts}
+              </li>
+              <li>
+                Emails sent this month: {data.usage.emailsSentThisMonth} / {data.limits.maxEmailsPerMonth}
+              </li>
+              <li>
+                Active sequences: {data.usage.activeSequencesCount} / {data.limits.maxActiveSequences}
+              </li>
+            </ul>
+          </Card>
 
           {data.subscriptionStatus === 'PAST_DUE' && (
-            <p style={{ color: '#b45309', fontWeight: 600 }}>
+            <div className="banner-inline banner-inline--warning" role="alert">
               Payment failed — update your card in the customer portal to restore campaigns, sequences, and
               imports.
-            </p>
+            </div>
           )}
 
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <button className="button" type="button" onClick={() => postBilling('checkout-session')}>
+          <div className="billing-actions">
+            <Button type="button" onClick={() => postBilling('checkout-session')}>
               Upgrade to Pro
-            </button>
-            <button
-              className="button"
+            </Button>
+            <Button
+              variant="secondary"
               type="button"
               disabled={!data.hasStripeCustomer}
               onClick={() => postBilling('portal-session')}
             >
               Manage billing
-            </button>
-            <button className="button" type="button" onClick={() => load()}>
+            </Button>
+            <Button variant="secondary" type="button" onClick={() => load()}>
               Refresh
-            </button>
+            </Button>
           </div>
-          {actionError && <p style={{ color: 'crimson' }}>{actionError}</p>}
-        </>
+          {actionError ? (
+            <p className="error" role="alert">
+              {actionError}
+            </p>
+          ) : null}
+          <p className="muted" style={{ marginTop: 'var(--space-4)' }}>
+            Questions about limits? See <Link href="/pricing">pricing</Link> or contact support from your workspace
+            settings when available.
+          </p>
+        </div>
       )}
     </main>
   );

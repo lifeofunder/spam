@@ -36,9 +36,7 @@ function UnsubscribeContent() {
         }
         setState('error');
         setMessage(
-          typeof body.message === 'string'
-            ? body.message
-            : 'Ссылка недействительна или устарела.',
+          typeof body.message === 'string' ? body.message : 'Ссылка недействительна или устарела.',
         );
       })
       .catch(() => {
@@ -48,23 +46,43 @@ function UnsubscribeContent() {
   }, [token]);
 
   return (
-    <main className="container" style={{ maxWidth: 480 }}>
-      <h1>Отписка</h1>
-      {state === 'loading' ? <p>Обработка…</p> : null}
-      {state === 'ok' || state === 'already' ? (
-        <p style={{ color: '#15803d' }}>{message}</p>
-      ) : null}
-      {state === 'error' ? <p className="error">{message}</p> : null}
-      <p style={{ marginTop: 24 }}>
-        <Link href="/">На главную</Link>
-      </p>
+    <main className="auth-page">
+      <div className="auth-card" style={{ maxWidth: 480 }}>
+        <h1>Отписка</h1>
+        {state === 'loading' ? (
+          <p className="loading-line loading-line--pulse" aria-live="polite">
+            Обработка…
+          </p>
+        ) : null}
+        {state === 'ok' || state === 'already' ? (
+          <p className="success-text" role="status">
+            {message}
+          </p>
+        ) : null}
+        {state === 'error' ? (
+          <p className="error" role="alert">
+            {message}
+          </p>
+        ) : null}
+        <div className="auth-card-footer" style={{ marginTop: 'var(--space-5)' }}>
+          <Link href="/">На главную</Link>
+        </div>
+      </div>
     </main>
   );
 }
 
 export default function UnsubscribePage() {
   return (
-    <Suspense fallback={<main className="container">Загрузка…</main>}>
+    <Suspense
+      fallback={
+        <main className="auth-page">
+          <div className="auth-card">
+            <p className="loading-line loading-line--pulse">Загрузка…</p>
+          </div>
+        </main>
+      }
+    >
       <UnsubscribeContent />
     </Suspense>
   );

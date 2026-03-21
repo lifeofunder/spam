@@ -9,8 +9,9 @@ export const metadata: Metadata = {
 export default function PricingPage() {
   return (
     <main className="container marketing-section">
+      <p className="marketing-eyebrow">Simple plans</p>
       <h1>Pricing</h1>
-      <p className="muted">
+      <p className="muted" style={{ maxWidth: '52ch', marginTop: 0 }}>
         Plans are enforced in the app (Free vs Pro). Upgrade anytime from{' '}
         <Link href="/dashboard/billing">Billing</Link> after you log in.
       </p>

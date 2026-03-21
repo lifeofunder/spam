@@ -37,19 +37,11 @@ export function BillingPastDueBanner() {
   }
 
   return (
-    <div
-      style={{
-        background: '#7c2d12',
-        color: '#fff',
-        padding: '10px 16px',
-        textAlign: 'center',
-        fontSize: '14px',
-      }}
-    >
-      Your subscription is <strong>past due</strong>. Marketing actions are paused until you update billing.{' '}
-      <Link href="/dashboard/billing" style={{ color: '#fed7aa', textDecoration: 'underline' }}>
-        Open billing
-      </Link>
+    <div className="billing-past-due-banner" role="alert">
+      <span>
+        Your subscription is <strong>past due</strong>. Marketing actions are paused until you update billing.
+      </span>{' '}
+      <Link href="/dashboard/billing">Open billing</Link>
     </div>
   );
 }

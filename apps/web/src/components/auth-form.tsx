@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useState } from 'react';
+import { Field } from '@/components/ui/field';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -17,15 +18,17 @@ export function AuthForm({ mode }: AuthFormProps) {
   const [password, setPassword] = useState('');
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState('');
+  const [termsError, setTermsError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const title = mode === 'login' ? 'Login' : 'Register';
+  const title = mode === 'login' ? 'Log in' : 'Create account';
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setError('');
+    setTermsError('');
     if (mode === 'register' && !acceptTerms) {
-      setError('You must accept the Terms and Privacy Policy');
+      setTermsError('You must accept the Terms and Privacy Policy');
       return;
     }
     setLoading(true);
@@ -39,7 +42,6 @@ export function AuthForm({ mode }: AuthFormProps) {
               email,
               password,
               acceptTerms: true,
-              // Optional: pass Turnstile token when NEXT_PUBLIC_TURNSTILE_SITE_KEY + widget are wired (see README).
             };
 
       const response = await fetch(`${API_URL}/auth/${mode}`, {
@@ -72,46 +74,60 @@ export function AuthForm({ mode }: AuthFormProps) {
   };
 
   return (
-    <main className="container marketing-section">
-      <div className="card">
+    <main className="auth-page">
+      <div className="auth-card">
         <h1>{title}</h1>
-        {error ? <div className="error">{error}</div> : null}
-        <form onSubmit={onSubmit}>
+        {error ? (
+          <div className="form-error-banner" role="alert">
+            {error}
+          </div>
+        ) : null}
+        <form onSubmit={onSubmit} noValidate>
           {mode === 'register' ? (
-            <div className="field">
-              <label htmlFor="name">Name</label>
+            <Field label="Full name" htmlFor="name">
               <input
                 id="name"
+                className="input"
                 type="text"
+                autoComplete="name"
                 value={name}
                 onChange={(event) => setName(event.target.value)}
+                placeholder="Jane Cooper"
                 required
               />
-            </div>
+            </Field>
           ) : null}
 
-          <div className="field">
-            <label htmlFor="email">Email</label>
+          <Field label="Email" htmlFor="email">
             <input
               id="email"
+              className="input"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@company.com"
               required
             />
-          </div>
+          </Field>
 
-          <div className="field">
-            <label htmlFor="password">Password</label>
+          <Field
+            label="Password"
+            htmlFor="password"
+            hint={mode === 'register' ? 'At least 8 characters.' : undefined}
+          >
             <input
               id="password"
+              className="input"
               type="password"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              placeholder="••••••••"
               minLength={8}
               required
             />
-          </div>
+          </Field>
 
           {mode === 'register' ? (
             <div className="field checkbox-field">
@@ -119,7 +135,14 @@ export function AuthForm({ mode }: AuthFormProps) {
                 id="acceptTerms"
                 type="checkbox"
                 checked={acceptTerms}
-                onChange={(e) => setAcceptTerms(e.target.checked)}
+                onChange={(e) => {
+                  setAcceptTerms(e.target.checked);
+                  if (e.target.checked) {
+                    setTermsError('');
+                  }
+                }}
+                aria-invalid={!!termsError}
+                aria-describedby={termsError ? 'acceptTerms-error' : undefined}
               />
               <label htmlFor="acceptTerms">
                 I agree to the{' '}
@@ -134,13 +157,18 @@ export function AuthForm({ mode }: AuthFormProps) {
               </label>
             </div>
           ) : null}
+          {termsError ? (
+            <p className="field-error" id="acceptTerms-error" role="alert">
+              {termsError}
+            </p>
+          ) : null}
 
-          <button className="button" disabled={loading} type="submit">
-            {loading ? 'Please wait...' : title}
+          <button className="button btn--block" disabled={loading} type="submit">
+            {loading ? 'Please wait…' : title}
           </button>
         </form>
 
-        <p>
+        <div className="auth-card-footer">
           {mode === 'login' ? (
             <>
               No account? <Link href="/register">Register</Link>
@@ -149,10 +177,10 @@ export function AuthForm({ mode }: AuthFormProps) {
             </>
           ) : (
             <>
-              Already have account? <Link href="/login">Login</Link>
+              Already have an account? <Link href="/login">Log in</Link>
             </>
           )}
-        </p>
+        </div>
       </div>
     </main>
   );

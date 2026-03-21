@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { PageHeader } from '@/components/ui/page-header';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -42,7 +45,13 @@ export default function DashboardPage() {
   }, [router]);
 
   if (loading) {
-    return <main className="container">Checking auth...</main>;
+    return (
+      <main>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Checking session…
+        </p>
+      </main>
+    );
   }
 
   if (!user) {
@@ -50,35 +59,68 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="container">
-      <h1>Dashboard</h1>
-      <p>
-        <Link href="/dashboard/contacts">Contacts</Link>
-        {' · '}
-        <Link href="/dashboard/templates">Templates</Link>
-        {' · '}
-        <Link href="/dashboard/campaigns">Campaigns</Link>
-        {' · '}
-        <Link href="/dashboard/sequences">Sequences</Link>
-        {' · '}
-        <Link href="/dashboard/billing">Billing</Link>
-      </p>
-      <p>Welcome, {user.name}</p>
-      <p>Email: {user.email}</p>
-      <p>Workspace: {user.workspaceId}</p>
-      {user.emailVerified === false ? (
-        <p className="muted">Email not verified — check your inbox or use the banner above.</p>
-      ) : null}
-      <button
-        className="button"
-        onClick={() => {
-          localStorage.removeItem('accessToken');
-          router.push('/login');
-        }}
-        type="button"
-      >
-        Logout
-      </button>
+    <main>
+      <PageHeader
+        title={`Welcome, ${user.name}`}
+        description="Pick a section to manage contacts, templates, campaigns, and billing."
+      />
+
+      <Card className="surface-card--wide" style={{ marginBottom: 'var(--space-5)' }}>
+        <h2 className="card-title">Account</h2>
+        <dl className="dash-dl">
+          <div>
+            <dt>Email</dt>
+            <dd>{user.email}</dd>
+          </div>
+          <div>
+            <dt>Workspace</dt>
+            <dd>
+              <code className="code-inline">{user.workspaceId}</code>
+            </dd>
+          </div>
+        </dl>
+        {user.emailVerified === false ? (
+          <p className="muted" style={{ marginBottom: 0 }}>
+            Email not verified — check your inbox or use the banner above.
+          </p>
+        ) : null}
+      </Card>
+
+      <div className="dashboard-quicklinks">
+        <Link href="/dashboard/contacts" className="quicklink-card">
+          <span className="quicklink-title">Contacts</span>
+          <span className="muted quicklink-desc">Import CSV &amp; tags</span>
+        </Link>
+        <Link href="/dashboard/templates" className="quicklink-card">
+          <span className="quicklink-title">Templates</span>
+          <span className="muted quicklink-desc">Subjects &amp; HTML</span>
+        </Link>
+        <Link href="/dashboard/campaigns" className="quicklink-card">
+          <span className="quicklink-title">Campaigns</span>
+          <span className="muted quicklink-desc">Send &amp; schedule</span>
+        </Link>
+        <Link href="/dashboard/sequences" className="quicklink-card">
+          <span className="quicklink-title">Sequences</span>
+          <span className="muted quicklink-desc">Automations</span>
+        </Link>
+        <Link href="/dashboard/billing" className="quicklink-card">
+          <span className="quicklink-title">Billing</span>
+          <span className="muted quicklink-desc">Plan &amp; usage</span>
+        </Link>
+      </div>
+
+      <Card className="surface-card--wide" style={{ marginTop: 'var(--space-5)' }}>
+        <Button
+          variant="secondary"
+          type="button"
+          onClick={() => {
+            localStorage.removeItem('accessToken');
+            router.push('/login');
+          }}
+        >
+          Log out
+        </Button>
+      </Card>
     </main>
   );
 }

@@ -65,12 +65,12 @@ export function EmailVerificationBanner() {
   }
 
   return (
-    <div className="verify-banner">
-      Please verify your email to import contacts and send campaigns.
+    <div className="verify-banner" role="status">
+      <span>Please verify your email to import contacts and send campaigns.</span>
       <button type="button" disabled={busy} onClick={resend}>
         {busy ? 'Sending…' : 'Resend link'}
       </button>
-      {msg ? <span style={{ marginLeft: 12 }}>{msg}</span> : null}
+      {msg ? <span className="verify-banner-msg">{msg}</span> : null}
     </div>
   );
 }

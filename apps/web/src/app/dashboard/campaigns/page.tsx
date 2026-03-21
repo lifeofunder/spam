@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Card, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -70,73 +73,87 @@ export default function CampaignsListPage() {
   }, [token]);
 
   if (!token) {
-    return <main className="container">Checking auth...</main>;
+    return (
+      <main>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Checking session…
+        </p>
+      </main>
+    );
   }
 
   return (
-    <main className="container">
-      <p>
-        <Link href="/dashboard">← Dashboard</Link>
-      </p>
-      <h1>Campaigns</h1>
-      <p>
-        <Link className="button" href="/dashboard/campaigns/new" style={{ display: 'inline-block' }}>
-          New campaign
-        </Link>
-      </p>
+    <main>
+      <PageHeader
+        title="Campaigns"
+        description="Draft, schedule, and send to filtered audiences."
+        actions={
+          <Link className="button" href="/dashboard/campaigns/new">
+            New campaign
+          </Link>
+        }
+      />
 
       {loading ? (
-        <p>Loading…</p>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Loading campaigns…
+        </p>
       ) : (
-        <div className="card" style={{ maxWidth: '100%' }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Filter</th>
-                <th>Events (Q/S/F)</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.name}</td>
-                  <td>
-                    {row.status}
-                    {row.status === 'DRAFT' && row.scheduledAt ? (
-                      <span
-                        style={{
-                          marginLeft: 8,
-                          fontSize: '0.75rem',
-                          fontWeight: 600,
-                          color: '#1d4ed8',
-                          background: '#dbeafe',
-                          padding: '2px 6px',
-                          borderRadius: 4,
-                        }}
-                      >
-                        SCHEDULED
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="muted">
-                    {row.query ? `q:${row.query} ` : ''}
-                    {row.tag ? `tag:${row.tag}` : '—'}
-                  </td>
-                  <td>
-                    {row.messageStats.queued}/{row.messageStats.sent}/{row.messageStats.failed}
-                  </td>
-                  <td>
-                    <Link href={`/dashboard/campaigns/${row.id}`}>Open</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!items.length ? <p className="muted">No campaigns yet.</p> : null}
-        </div>
+        <Card className="surface-card--wide">
+          <CardHeader title="All campaigns" />
+          {!items.length ? (
+            <EmptyState
+              title="No campaigns yet"
+              description="Create a campaign, pick a template, and send when your audience is ready."
+              action={
+                <Link className="button" href="/dashboard/campaigns/new">
+                  New campaign
+                </Link>
+              }
+            />
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Filter</th>
+                    <th scope="col">Events (Q/S/F)</th>
+                    <th scope="col">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.name}</td>
+                      <td>
+                        {row.status}
+                        {row.status === 'DRAFT' && row.scheduledAt ? (
+                          <span className="badge badge--info">SCHEDULED</span>
+                        ) : null}
+                      </td>
+                      <td className="muted">
+                        {row.query ? `q:${row.query} ` : ''}
+                        {row.tag ? `tag:${row.tag}` : '—'}
+                      </td>
+                      <td>
+                        {row.messageStats.queued}/{row.messageStats.sent}/{row.messageStats.failed}
+                      </td>
+                      <td>
+                        <Link className="button ghost small" href={`/dashboard/campaigns/${row.id}`}>
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       )}
     </main>
   );

@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Card, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -57,49 +60,75 @@ export default function TemplatesListPage() {
   }, [token]);
 
   if (!token) {
-    return <main className="container">Checking auth...</main>;
+    return (
+      <main>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Checking session…
+        </p>
+      </main>
+    );
   }
 
   return (
-    <main className="container">
-      <p>
-        <Link href="/dashboard">← Dashboard</Link>
-      </p>
-      <h1>Email templates</h1>
-      <p>
-        <Link className="button" href="/dashboard/templates/new" style={{ display: 'inline-block' }}>
-          New template
-        </Link>
-      </p>
+    <main>
+      <PageHeader
+        title="Email templates"
+        description="Reusable subjects and HTML for campaigns and sequences."
+        actions={
+          <Link className="button" href="/dashboard/templates/new">
+            New template
+          </Link>
+        }
+      />
 
       {loading ? (
-        <p>Loading…</p>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Loading templates…
+        </p>
       ) : (
-        <div className="card" style={{ maxWidth: '100%' }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Subject</th>
-                <th>Updated</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.name}</td>
-                  <td>{row.subject}</td>
-                  <td>{new Date(row.updatedAt).toLocaleString()}</td>
-                  <td>
-                    <Link href={`/dashboard/templates/${row.id}`}>Edit</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!items.length ? <p className="muted">No templates yet.</p> : null}
-        </div>
+        <Card className="surface-card--wide">
+          <CardHeader title="All templates" />
+          {!items.length ? (
+            <EmptyState
+              title="No templates yet"
+              description="Create a template to use in campaigns and sequence steps."
+              action={
+                <Link className="button" href="/dashboard/templates/new">
+                  New template
+                </Link>
+              }
+            />
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Subject</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.name}</td>
+                      <td>{row.subject}</td>
+                      <td>{new Date(row.updatedAt).toLocaleString()}</td>
+                      <td>
+                        <Link className="button ghost small" href={`/dashboard/templates/${row.id}`}>
+                          Edit
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       )}
     </main>
   );

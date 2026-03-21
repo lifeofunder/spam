@@ -1,9 +1,11 @@
 'use client';
 
 import type { ContactsListResponseDto, CsvImportResultDto } from '@email-saas/shared';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { Card, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -173,37 +175,55 @@ export default function ContactsPage() {
   };
 
   if (!token) {
-    return <main className="container">Checking auth...</main>;
+    return (
+      <main>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Checking session…
+        </p>
+      </main>
+    );
   }
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / pageSize)) : 1;
 
   return (
-    <main className="container">
-      <p>
-        <Link href="/dashboard">← Back to dashboard</Link>
-      </p>
-      <h1>Contacts</h1>
+    <main>
+      <PageHeader
+        title="Contacts"
+        description="Import CSV files, search your directory, and keep tags up to date."
+      />
 
-      <section className="card" style={{ maxWidth: 640, marginBottom: 24 }}>
-        <h2>Import CSV</h2>
-        <p className="muted">Multipart field name must be <code>file</code>.</p>
-        <form onSubmit={onImport}>
-          <input accept=".csv,text/csv" name="file" required type="file" />
-          <button className="button" disabled={importing} style={{ marginLeft: 12 }} type="submit">
-            {importing ? 'Uploading...' : 'Upload'}
+      <Card className="surface-card--wide" style={{ marginBottom: 'var(--space-5)' }}>
+        <CardHeader
+          title="Import CSV"
+          description="Multipart field name must be `file`. UTF-8 CSV with a header row."
+        />
+        <form className="import-form" onSubmit={onImport}>
+          <label className="sr-only" htmlFor="contacts-csv">
+            CSV file
+          </label>
+          <input
+            id="contacts-csv"
+            accept=".csv,text/csv"
+            className="input import-file"
+            name="file"
+            required
+            type="file"
+          />
+          <button className="button" disabled={importing} type="submit">
+            {importing ? 'Uploading…' : 'Upload'}
           </button>
         </form>
         {importResult ? (
-          <div style={{ marginTop: 16 }}>
-            <p>
-              Inserted: {importResult.inserted}, updated: {importResult.updated}, skipped:{' '}
-              {importResult.skipped}
+          <div className="import-result">
+            <p className="import-result-summary">
+              Inserted: <strong>{importResult.inserted}</strong>, updated:{' '}
+              <strong>{importResult.updated}</strong>, skipped: <strong>{importResult.skipped}</strong>
             </p>
             {importResult.errors.length ? (
               <div>
-                <strong>Row issues</strong>
-                <ul>
+                <strong className="import-errors-title">Row issues</strong>
+                <ul className="import-errors-list">
                   {importResult.errors.map((e) => (
                     <li key={`${e.line}-${e.message}`}>
                       Line {e.line}: {e.message}
@@ -214,28 +234,30 @@ export default function ContactsPage() {
             ) : null}
           </div>
         ) : null}
-      </section>
+      </Card>
 
-      <section className="card" style={{ maxWidth: '100%' }}>
-        <h2>Directory</h2>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+      <Card className="surface-card--wide">
+        <CardHeader title="Directory" />
+        <div className="toolbar">
           <input
+            aria-label="Search contacts"
+            className="input"
             onChange={(e) => {
               setPage(1);
               setQuery(e.target.value);
             }}
-            placeholder="Search email, name, company..."
-            style={{ flex: '1 1 220px', padding: 8 }}
+            placeholder="Search email, name, company…"
             type="search"
             value={query}
           />
           <input
+            aria-label="Filter by tag"
+            className="input"
             onChange={(e) => {
               setPage(1);
               setTagFilter(e.target.value);
             }}
             placeholder="Filter by tag (exact)"
-            style={{ flex: '0 1 200px', padding: 8 }}
             type="text"
             value={tagFilter}
           />
@@ -245,38 +267,51 @@ export default function ContactsPage() {
         </div>
 
         {loading ? (
-          <p>Loading...</p>
+          <p className="loading-line loading-line--pulse" aria-live="polite">
+            Loading contacts…
+          </p>
         ) : !data ? (
-          <p>Failed to load contacts.</p>
+          <p className="error" role="alert">
+            Failed to load contacts.
+          </p>
+        ) : !data.items.length ? (
+          <EmptyState
+            title="No contacts yet"
+            description="Upload a CSV to populate your workspace, or adjust filters if you expected results."
+          />
         ) : (
           <>
-            <div style={{ overflowX: 'auto' }}>
+            <div className="table-wrap">
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Email</th>
-                    <th>Name</th>
-                    <th>Company</th>
-                    <th>Status</th>
-                    <th>Tags</th>
-                    <th />
+                    <th scope="col">Email</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Company</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Tags</th>
+                    <th scope="col">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.items.map((c) => (
                     <tr key={c.id}>
                       <td>{c.email}</td>
-                      <td>
-                        {[c.firstName, c.lastName].filter(Boolean).join(' ') || '—'}
-                      </td>
+                      <td>{[c.firstName, c.lastName].filter(Boolean).join(' ') || '—'}</td>
                       <td>{c.company ?? '—'}</td>
                       <td>{c.status}</td>
                       <td style={{ minWidth: 220 }}>
+                        <label className="sr-only" htmlFor={`tags-${c.id}`}>
+                          Tags for {c.email}
+                        </label>
                         <input
+                          id={`tags-${c.id}`}
+                          className="input"
                           onChange={(e) =>
                             setTagDrafts((prev) => ({ ...prev, [c.id]: e.target.value }))
                           }
-                          style={{ width: '100%', padding: 6 }}
                           type="text"
                           value={tagDrafts[c.id] ?? ''}
                         />
@@ -287,12 +322,12 @@ export default function ContactsPage() {
                           style={{ marginTop: 6 }}
                           type="button"
                         >
-                          {savingId === c.id ? 'Saving...' : 'Save tags'}
+                          {savingId === c.id ? 'Saving…' : 'Save tags'}
                         </button>
                       </td>
                       <td>
                         <button
-                          className="button danger"
+                          className="button danger small"
                           disabled={c.status === 'UNSUBSCRIBED'}
                           onClick={() => void unsubscribe(c.id)}
                           type="button"
@@ -305,16 +340,16 @@ export default function ContactsPage() {
                 </tbody>
               </table>
             </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 16 }}>
+            <div className="pager">
               <button
                 className="button secondary"
                 disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 type="button"
               >
-                Prev
+                Previous
               </button>
-              <span>
+              <span className="pager-meta muted">
                 Page {page} / {totalPages} ({data.total} total)
               </span>
               <button
@@ -328,7 +363,7 @@ export default function ContactsPage() {
             </div>
           </>
         )}
-      </section>
+      </Card>
     </main>
   );
 }

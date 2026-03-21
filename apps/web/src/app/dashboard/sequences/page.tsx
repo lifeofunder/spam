@@ -3,6 +3,9 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { Card, CardHeader } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -57,50 +60,77 @@ export default function SequencesListPage() {
   }, [token]);
 
   if (!token) {
-    return <main className="container">Checking auth...</main>;
+    return (
+      <main>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Checking session…
+        </p>
+      </main>
+    );
   }
 
   return (
-    <main className="container">
-      <p>
-        <Link href="/dashboard">← Dashboard</Link>
-      </p>
-      <h1>Sequences</h1>
-      <p>
-        <Link className="button" href="/dashboard/sequences/new" style={{ display: 'inline-block' }}>
-          New sequence
-        </Link>
-      </p>
+    <main>
+      <PageHeader
+        title="Sequences"
+        description="Multi-step automations with enrollments and timed sends."
+        actions={
+          <Link className="button" href="/dashboard/sequences/new">
+            New sequence
+          </Link>
+        }
+      />
+
       {loading ? (
-        <p>Loading…</p>
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Loading sequences…
+        </p>
       ) : (
-        <div className="card" style={{ maxWidth: '100%' }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th>Steps</th>
-                <th>Enrollments</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((row) => (
-                <tr key={row.id}>
-                  <td>{row.name}</td>
-                  <td>{row.status}</td>
-                  <td>{row._count.steps}</td>
-                  <td>{row._count.enrollments}</td>
-                  <td>
-                    <Link href={`/dashboard/sequences/${row.id}`}>Open</Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!items.length ? <p className="muted">No sequences yet.</p> : null}
-        </div>
+        <Card className="surface-card--wide">
+          <CardHeader title="All sequences" />
+          {!items.length ? (
+            <EmptyState
+              title="No sequences yet"
+              description="Define steps with templates and delays, then enroll subscribed contacts."
+              action={
+                <Link className="button" href="/dashboard/sequences/new">
+                  New sequence
+                </Link>
+              }
+            />
+          ) : (
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Steps</th>
+                    <th scope="col">Enrollments</th>
+                    <th scope="col">
+                      <span className="sr-only">Actions</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.name}</td>
+                      <td>{row.status}</td>
+                      <td>{row._count.steps}</td>
+                      <td>{row._count.enrollments}</td>
+                      <td>
+                        <Link className="button ghost small" href={`/dashboard/sequences/${row.id}`}>
+                          Open
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
       )}
     </main>
   );

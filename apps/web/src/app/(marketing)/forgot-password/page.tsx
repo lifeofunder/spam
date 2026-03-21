@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
+import { Field } from '@/components/ui/field';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -35,32 +36,40 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="container marketing-section">
-      <div className="card" style={{ maxWidth: 420 }}>
+    <main className="auth-page">
+      <div className="auth-card">
         <h1>Forgot password</h1>
         {done ? (
-          <p>If an account exists for that email, we sent reset instructions.</p>
+          <p className="muted" style={{ marginTop: 0 }}>
+            If an account exists for that email, we sent reset instructions.
+          </p>
         ) : (
-          <form onSubmit={onSubmit}>
-            {error ? <div className="error">{error}</div> : null}
-            <div className="field">
-              <label htmlFor="email">Email</label>
+          <form onSubmit={onSubmit} noValidate>
+            {error ? (
+              <div className="form-error-banner" role="alert">
+                {error}
+              </div>
+            ) : null}
+            <Field label="Email" htmlFor="forgot-email">
               <input
-                id="email"
+                id="forgot-email"
+                className="input"
                 type="email"
+                autoComplete="email"
                 value={email}
                 onChange={(ev) => setEmail(ev.target.value)}
+                placeholder="you@company.com"
                 required
               />
-            </div>
-            <button className="button" type="submit" disabled={loading}>
+            </Field>
+            <button className="button btn--block" type="submit" disabled={loading}>
               {loading ? 'Please wait…' : 'Send reset link'}
             </button>
           </form>
         )}
-        <p className="muted">
+        <div className="auth-card-footer">
           <Link href="/login">Back to login</Link>
-        </p>
+        </div>
       </div>
     </main>
   );

@@ -53,21 +53,47 @@ function VerifyEmailInner() {
   }, [router, searchParams]);
 
   return (
-    <main className="container marketing-section">
-      <h1>Verify email</h1>
-      {status === 'loading' && <p>Verifying…</p>}
-      {status === 'ok' && <p style={{ color: 'green' }}>{message}</p>}
-      {status === 'err' && <p className="error">{message}</p>}
-      <p className="muted">
-        <Link href="/login">Back to login</Link>
-      </p>
+    <main className="auth-page">
+      <div className="auth-card">
+        <h1>Verify email</h1>
+        {status === 'loading' && (
+          <p className="loading-line loading-line--pulse" aria-live="polite">
+            Verifying…
+          </p>
+        )}
+        {status === 'ok' && (
+          <p className="success-text" role="status">
+            {message}
+          </p>
+        )}
+        {status === 'err' && (
+          <p className="error" role="alert">
+            {message}
+          </p>
+        )}
+        <div className="auth-card-footer">
+          <Link href="/login">Back to login</Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function VerifyLoading() {
+  return (
+    <main className="auth-page">
+      <div className="auth-card">
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Loading…
+        </p>
+      </div>
     </main>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <Suspense fallback={<main className="container">Loading…</main>}>
+    <Suspense fallback={<VerifyLoading />}>
       <VerifyEmailInner />
     </Suspense>
   );

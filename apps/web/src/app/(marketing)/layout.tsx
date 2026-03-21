@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { MarketingHeader } from '@/components/marketing-header';
 
 const siteUrl =
   (typeof process.env.NEXT_PUBLIC_WEB_URL === 'string' && process.env.NEXT_PUBLIC_WEB_URL) ||
@@ -33,20 +34,7 @@ export const metadata: Metadata = {
 export default function MarketingLayout({ children }: { children: ReactNode }) {
   return (
     <div className="marketing-root">
-      <header className="marketing-header">
-        <div className="container marketing-header-inner">
-          <Link href="/" className="marketing-logo">
-            {siteName}
-          </Link>
-          <nav className="marketing-nav">
-            <Link href="/pricing">Pricing</Link>
-            <Link href="/login">Log in</Link>
-            <Link href="/register" className="button marketing-cta">
-              Start free
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <MarketingHeader />
       {children}
       <footer className="marketing-footer">
         <div className="container marketing-footer-inner">

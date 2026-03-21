@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FormEvent, Suspense, useState } from 'react';
+import { Field } from '@/components/ui/field';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
@@ -45,32 +46,52 @@ function ResetPasswordInner() {
   };
 
   return (
-    <main className="container marketing-section">
-      <div className="card" style={{ maxWidth: 420 }}>
+    <main className="auth-page">
+      <div className="auth-card">
         <h1>Reset password</h1>
         {!token ? (
-          <p className="error">Missing token in URL.</p>
+          <p className="error" role="alert">
+            Missing token in URL.
+          </p>
         ) : (
-          <form onSubmit={onSubmit}>
-            {error ? <div className="error">{error}</div> : null}
-            <div className="field">
-              <label htmlFor="password">New password</label>
+          <form onSubmit={onSubmit} noValidate>
+            {error ? (
+              <div className="form-error-banner" role="alert">
+                {error}
+              </div>
+            ) : null}
+            <Field label="New password" htmlFor="reset-password" hint="At least 8 characters.">
               <input
-                id="password"
+                id="reset-password"
+                className="input"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(ev) => setPassword(ev.target.value)}
+                placeholder="••••••••"
                 minLength={8}
                 required
               />
-            </div>
-            <button className="button" type="submit" disabled={loading}>
+            </Field>
+            <button className="button btn--block" type="submit" disabled={loading}>
               {loading ? 'Please wait…' : 'Save password'}
             </button>
           </form>
         )}
-        <p className="muted">
+        <div className="auth-card-footer">
           <Link href="/login">Back to login</Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function ResetLoading() {
+  return (
+    <main className="auth-page">
+      <div className="auth-card">
+        <p className="loading-line loading-line--pulse" aria-live="polite">
+          Loading…
         </p>
       </div>
     </main>
@@ -79,7 +100,7 @@ function ResetPasswordInner() {
 
 export default function ResetPasswordPage() {
   return (
-    <Suspense fallback={<main className="container">Loading…</main>}>
+    <Suspense fallback={<ResetLoading />}>
       <ResetPasswordInner />
     </Suspense>
   );

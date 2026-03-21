@@ -1,0 +1,35 @@
+# Reference stack for self-hosting the API + worker (NOT for GitHub Pages).
+# GitHub Pages serves only static files from apps/web; NestJS/Postgres/Redis run elsewhere.
+#
+# Example on a VPS:
+#   docker compose -f docker-compose.prod.yml up -d
+# Then build and run the API + worker on the host or in separate containers (add your own image/build).
+#
+# Set DATABASE_URL=postgresql://postgres:postgres@localhost:5432/email_saas and REDIS_URL=redis://localhost:6379
+# in apps/api/.env (or use service names if API is containerized on the same network).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: email_saas
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_prod_data:/data
+    command: ['redis-server', '--appendonly', 'yes']
+
+volumes:
+  postgres_prod_data:
+  redis_prod_data:

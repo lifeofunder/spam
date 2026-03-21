@@ -16,6 +16,7 @@
     "dev:apps:with-worker": "concurrently \"npm run dev --workspace @email-saas/api\" \"npm run dev --workspace @email-saas/web\" \"npm run worker:dev --workspace @email-saas/api\"",
     "dev:prepare": "npm run setup && npm run prisma:generate --workspace @email-saas/api && npm run prisma:migrate --workspace @email-saas/api && npm run seed",
     "build": "npm run build --workspace @email-saas/shared && npm run build --workspace @email-saas/api && npm run build --workspace @email-saas/web",
+    "build:web:static": "npm run build --workspace @email-saas/shared && cross-env NEXT_STATIC_EXPORT=1 npm run build --workspace @email-saas/web",
     "test:api": "npm run test --workspace @email-saas/api",
     "lint": "npm run lint --workspaces",
     "format": "prettier . --write",
@@ -30,6 +31,7 @@
     "eslint": "^9.22.0",
     "globals": "^15.15.0",
     "typescript-eslint": "^8.26.1",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "cross-env": "^7.0.3"
   }
 }
